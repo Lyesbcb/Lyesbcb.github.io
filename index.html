@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'aperçu Vinted</title>
+    <link rel="stylesheet" href="vinted.css"> <!-- Assurez-vous que ce fichier contient les styles récupérés -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .preview-container {
+            position: relative;
+            width: 250px;
+        }
+
+        .preview-container img {
+            width: 100%;
+            height: auto;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(14px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Formulaire -->
+        <div class="form-container">
+            <input type="text" id="title" placeholder="Titre du produit">
+            <input type="text" id="price" placeholder="Prix (€)">
+            <input type="file" id="imageUpload" accept="image/*">
+            <button onclick="downloadScreenshot()">Télécharger l’image</button>
+            <label class="switch">
+                <input type="checkbox" id="statusToggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+
+        <!-- Aperçu -->
+        <div id="screenshotTarget">
+            <div class="web_ui__Cell__cell web_ui__Cell__wide web_ui__Cell__transparent web_ui__Cell__navigating web_ui__Cell__with-chevron"
+                role="button" tabindex="0" data-testid="my-orders-item">
+                <div class="web_ui__Cell__image" data-testid="my-orders-item--prefix">
+                    <div class="web_ui__DoubleImage__double-image">
+                        <div class="web_ui__Image__image web_ui__Image__large web_ui__Image__portrait web_ui__Image__rounded web_ui__Image__scaled web_ui__Image__cover web_ui__Image__ratio"
+                            data-testid="my-orders-item-image"><img id="imagePreview" src="" alt=""
+                                class="web_ui__Image__content" data-testid="my-orders-item-image--img"></div>
+                        <div id="statusIconContainer">
+                            <div class="web_ui__DoubleImage__secondary">
+                                <span class="u-inline-flex circle u-background-greyscale-level-6">
+                                    <span class="web_ui__Icon__icon web_ui__Icon__greyscale-level-3"
+                                        style="width: 24px;">
+                                        <svg id="statusIcon" fill="none" viewBox="0 0 24 24" width="24" height="24"
+                                            role="img">
+                                            <title>Statut de la transaction: Échec</title>
+                                            <path fill="currentColor" fill-rule="evenodd"
+                                                d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2Zm3.47 14.53L12 13.06l-3.47 3.47-1.06-1.06L10.94 12 7.47 8.53l1.06-1.06L12 10.94l3.47-3.47 1.06 1.06L13.06 12l3.47 3.47-1.06 1.06Z"
+                                                clip-rule="evenodd"></path>
+                                        </svg>
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="web_ui__Cell__content">
+                    <div class="web_ui__Cell__heading">
+                        <div id="previewTitle" class="web_ui__Cell__title" data-testid="my-orders-item--title">Crewneck
+                            Sergio Tacchini
+                            (pull sans capuche)</div>
+                    </div>
+                    <div class="web_ui__Cell__body" data-testid="my-orders-item--content">
+                        <h3 class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left" id="previewPrice">
+                            14,45&nbsp;€</h3><br>
+                        <h3 class="web_ui__Text__text web_ui__Text__subtitle web_ui__Text__left" id="previewSubTitle">
+                            Remboursement effectué
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('statusToggle').addEventListener('change', function () {
+            const statusIcon = document.getElementById('statusIcon');
+            const subTitleElement = document.getElementById('previewSubTitle');
+
+            if (this.checked) {
+                // Icône pour "Article vendu"
+                statusIcon.innerHTML = `
+            <title>Statut de la transaction: Finalisées</title>
+            <path d="m11 15.56-3.53-3.53 1.06-1.06L11 13.44l4.47-4.47 1.06 1.06L11 15.56zM12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"></path>
+        `;
+                statusIcon.parentElement.classList.replace("web_ui__Icon__greyscale-level-3", "web_ui__Icon__success-default");
+                subTitleElement.textContent = "Commande finalisée - l'acheteur a validé la commande";
+            } else {
+                // Icône pour "Article annulé"
+                statusIcon.innerHTML = `
+            <title>Statut de la transaction: Échec</title>
+            <path fill="currentColor" fill-rule="evenodd"
+                d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2Zm3.47 14.53L12 13.06l-3.47 3.47-1.06-1.06L10.94 12 7.47 8.53l1.06-1.06L12 10.94l3.47-3.47 1.06 1.06L13.06 12l3.47 3.47-1.06 1.06Z"
+                clip-rule="evenodd"></path>
+        `;
+                statusIcon.parentElement.classList.replace("web_ui__Icon__success-default", "web_ui__Icon__greyscale-level-3");
+                subTitleElement.textContent = "Remboursement effectué";
+            }
+        });
+        document.getElementById('title').addEventListener('input', updatePreview);
+        document.getElementById('price').addEventListener('input', updatePreview);
+        document.getElementById('imageUpload').addEventListener('change', updatePreview);
+
+        function updatePreview() {
+            const title = document.getElementById('title').value;
+            const price = document.getElementById('price').value;
+            const imageInput = document.getElementById('imageUpload');
+
+            const titleElement = document.getElementById('previewTitle');
+            const priceElement = document.getElementById('previewPrice');
+            const imagePreview = document.getElementById('imagePreview');
+
+            if (titleElement) titleElement.textContent = title || "Titre ici";
+            if (priceElement) priceElement.textContent = price ? `${price} €` : "0,00 €";
+
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    if (imagePreview) {
+                        imagePreview.src = e.target.result; // Utilisation du base64
+                        console.log("Image chargée en base64 :", e.target.result.substring(0, 100)); // Vérifier la conversion
+                    }
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            }
+        }
+
+        function downloadScreenshot() {
+            const target = document.getElementById('screenshotTarget');
+
+            console.log("Taille de l'élément avant capture :", target.offsetWidth, target.offsetHeight);
+
+            if (target.offsetWidth === 0 || target.offsetHeight === 0) {
+                console.error("L'élément est caché ou n'a pas de taille !");
+                return;
+            }
+
+            html2canvas(target, {
+                useCORS: true // Active CORS si nécessaire
+            }).then(canvas => {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL("image/jpeg").replace("image/jpeg", "image/octet-stream");
+                a.download = 'screenshot.jpg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }).catch(error => {
+                console.error("Erreur lors de la capture d'écran :", error);
+            });
+        }
+    </script>
+</body>
+
+</html>
